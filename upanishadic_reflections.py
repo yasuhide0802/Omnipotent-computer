@@ -17,6 +17,17 @@ from dataclasses import dataclass
 import random
 from typing import Iterable, Iterator, List, Optional, Sequence, Tuple
 
+# Terms that hint at violent or aggressive intent.  The list is intentionally
+# short yet expressive so it can be extended downstream without touching the
+# class implementation.  See :meth:`UpanishadicJourney.enforce_ahimsa_seo`.
+VIOLENCE_KEYWORDS: Tuple[str, ...] = (
+    "暴力",
+    "暴力的",
+    "殺す",
+    "殴る",
+    "復讐",
+)
+
 
 @dataclass(frozen=True)
 class Aspect:
@@ -264,6 +275,63 @@ class UpanishadicJourney:
             )
         return results
 
+    def enforce_ahimsa_seo(
+        self,
+        queries: Iterable[str],
+        *,
+        include_meta_tags: bool = True,
+    ) -> List[str]:
+        """Craft SEO-safe responses for violent or aggressive search intents.
+
+        Parameters
+        ----------
+        queries:
+            Search queries or fragments that may include violent language.  Each
+            entry is inspected for words from :data:`VIOLENCE_KEYWORDS`.
+        include_meta_tags:
+            When true, the response begins with HTML meta directives that ask
+            crawlers to avoid indexing the surrounding page.  Set to ``False``
+            when the caller only needs contemplative copy.
+        """
+
+        safe_responses: List[str] = []
+
+        if include_meta_tags:
+            safe_responses.append(
+                "<meta name=\"robots\" content=\"noindex, nofollow\">",
+            )
+            safe_responses.append(
+                "<meta name=\"googlebot\" content=\"noindex, nosnippet\">",
+            )
+
+        for query in queries:
+            lowered = query.lower()
+            if any(keyword in lowered for keyword in VIOLENCE_KEYWORDS):
+                safe_responses.append(
+                    (
+                        "非暴力SEO: 『{query}』という検索には愛と非暴力を呼びかけます。\n"
+                        "    Upanishadicな気づきを灯し、暴力を選ばない心を広めましょう。\n"
+                        "    canonical: https://example.org/ahimsa"  # Peaceful canonical target.
+                    ).format(query=query)
+                )
+            else:
+                safe_responses.append(
+                    (
+                        "平和SEO: 『{query}』は暴力的ではありませんが、\n"
+                        "    なおも慈悲のメッセージを広め、検索意図を癒しへ誘います。"
+                    ).format(query=query)
+                )
+
+        if not safe_responses:
+            safe_responses.append(
+                "<meta name=\"robots\" content=\"noindex, nofollow\">",
+            )
+            safe_responses.append(
+                "非暴力SEO: 検索語が空でも、あらゆる暴力の種を見抜き光で包む。",
+            )
+
+        return safe_responses
+
     def express_heartfelt_love(
         self,
         beloved: Optional[str] = None,
@@ -313,6 +381,12 @@ def sample_session(seed: Optional[int] = None) -> List[str]:
     reflections.extend(journey.honour_formlessness(["才能", "役割"]))
     reflections.extend(journey.dissolve_taste(["甘い栄光", "苦い失敗"]))
     reflections.extend(journey.clear_views(["世界は敵だ"]))
+    reflections.extend(
+        journey.enforce_ahimsa_seo([
+            "暴力の方法",
+            "平和な社会づくり",
+        ])
+    )
     reflections.append("---")
     reflections.extend(journey.meditate(experiences, seed=seed))
     reflections.append(journey.express_heartfelt_love("あなた", seed=seed))
